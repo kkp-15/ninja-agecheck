@@ -4,11 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>家族の年齢チェッカー</title>
-  <meta name="description" content="家族や友人の年齢を自動で一覧表示。誕生日も分かる便利な無料Webアプリ。" />
-  <meta name="keywords" content="年齢, 家族, 誕生日, 年齢チェッカー, 年齢計算" />
+  <meta name="description" content="家族の年齢を簡単チェック！誕生日と年齢を一覧表示できる無料Webアプリ。" />
+  <meta name="keywords" content="家族, 年齢, 誕生日, チェッカー, 無料アプリ" />
   <meta name="theme-color" content="#0066cc" />
   <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAAB6klEQVR4nO3SQQ3AIADAQJhY1CIKD+" />
-
   <style>
     body {
       font-family: sans-serif;
@@ -124,19 +123,28 @@
 
     function render() {
       const tbody = document.querySelector("#peopleTable tbody");
-      tbody.innerHTML = people.length === 0
-        ? `<tr><td colspan="4">データがありません。上のフォームから追加してください。</td></tr>`
-        : "";
+      tbody.innerHTML = "";
       people.forEach((p, index) => {
         const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${p.name}</td>
-          <td>${p.birth}</td>
-          <td>${calcAge(p.birth)} 歳 ${isBirthdayToday(p.birth) ? "🎉" : ""}</td>
-          <td>
-            <button onclick="editPerson(${index})">編集</button>
-            <button onclick="deletePerson(${index})">削除</button>
-          </td>`;
+        if (p.editing) {
+          tr.innerHTML = `
+            <td><input id="edit-name-${index}" type="text" value="${p.name}" /></td>
+            <td><input id="edit-birth-${index}" type="date" value="${p.birth}" /></td>
+            <td>${calcAge(p.birth)} 歳</td>
+            <td>
+              <button onclick="saveEdit(${index})">保存</button>
+              <button onclick="cancelEdit(${index})">キャンセル</button>
+            </td>`;
+        } else {
+          tr.innerHTML = `
+            <td>${p.name}</td>
+            <td>${p.birth}</td>
+            <td>${calcAge(p.birth)} 歳 ${isBirthdayToday(p.birth) ? "🎉" : ""}</td>
+            <td>
+              <button onclick="editPerson(${index})">編集</button>
+              <button onclick="deletePerson(${index})">削除</button>
+            </td>`;
+        }
         tbody.appendChild(tr);
       });
     }
@@ -161,19 +169,25 @@
     }
 
     function editPerson(index) {
-      const p = people[index];
-      const newName = prompt("新しい名前", p.name);
-      const newBirth = prompt("新しい生年月日 (例: 2010-03-05)", p.birth);
+      people[index].editing = true;
+      render();
+      setTimeout(() => {
+        const input = document.getElementById(`edit-name-${index}`);
+        if (input) input.focus();
+      }, 0);
+    }
 
-      // 生年月日の形式を YYYY-MM-DD に限定
-      const datePattern = /^\d{4}-\d{2}-\d{2}$/;
-      if (!newName || !newBirth || !datePattern.test(newBirth)) {
-        alert("正しい形式で入力してください（例: 2010-03-05）");
-        return;
-      }
-
+    function saveEdit(index) {
+      const newName = document.getElementById(`edit-name-${index}`).value.trim();
+      const newBirth = document.getElementById(`edit-birth-${index}`).value;
+      if (!newName || !newBirth) return alert("どちらも入力してください");
       people[index] = { name: newName, birth: newBirth };
       save();
+      render();
+    }
+
+    function cancelEdit(index) {
+      people[index].editing = false;
       render();
     }
 
