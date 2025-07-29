@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>家族の年齢チェッカー</title>
+  <meta name="description" content="家族や友人の年齢を自動で一覧表示。誕生日も分かる便利な無料Webアプリ。" />
+  <meta name="keywords" content="年齢, 家族, 誕生日, 年齢チェッカー, 年齢計算" />
+  <meta property="og:title" content="家族の年齢チェッカー" />
+  <meta property="og:description" content="名前と生年月日を入力するだけ。家族の年齢がすぐ分かるシンプルWebアプリ。" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://agecheck.kkpwebninja.com/" />
+  <meta property="og:image" content="https://agecheck.kkpwebninja.com/ogp.jpg" />
+  <meta name="theme-color" content="#0066cc" />
+  <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAAB6klEQVR4nO3SQQ3AIADAQJhY1CIKD+" />
+  <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAAB6klEQVR4nO3SQQ3AIADAQJhY1CIKD+" />
+
+  <!-- PWA manifest を動的に挿入 -->
+  <script>
+    const manifest = {
+      name: "家族の年齢チェッカー",
+      short_name: "年齢チェッカー",
+      start_url: "https://agecheck.kkpwebninja.com/",
+      display: "standalone",
+      background_color: "#f8f8f8",
+      theme_color: "#0066cc",
+      icons: [
+        {
+          src: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAAB6klEQVR4nO3SQQ3AIADAQJhY1CIKD+",
+          sizes: "192x192",
+          type: "image/png"
+        }
+      ]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    const manifestURL = URL.createObjectURL(blob);
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = manifestURL;
+    document.head.appendChild(link);
+  </script>
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-2LM85GJN0L"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-2LM85GJN0L');
+  </script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f8f8f8;
+      padding: 2rem;
+      margin: 0;
+    }
+    h1 {
+      text-align: center;
+    }
+    .info {
+      font-size: 0.9rem;
+      color: #555;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.5rem;
+      text-align: center;
+    }
+    input[type="text"], input[type="date"] {
+      padding: 0.4rem;
+      margin: 0.3rem;
+    }
+    button {
+      padding: 0.4rem 0.8rem;
+      margin: 0.3rem;
+      cursor: pointer;
+    }
+    #footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid #ccc;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #555;
+    }
+    #footer a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>👪 家族の年齢チェッカー</h1>
+
+  <div class="info">
+    入力された名前と生年月日はすべて「お使いの端末のブラウザ内」に保存され、外部に送信されることはありません。<br>
+    実名でなく「長女」「ママ」「ペット」など、自由な名前でご利用いただけます。
+  </div>
+
+  <div>
+    名前：<input type="text" id="name" placeholder="例：長女、ママ、ペットなど" />
+    生年月日：<input type="date" id="birthdate" />
+    <button onclick="addPerson()">追加</button>
+    <button onclick="clearAll()">全データ削除</button>
+  </div>
+
+  <table id="peopleTable">
+    <thead>
+      <tr><th>名前</th><th>生年月日</th><th>年齢</th><th>操作</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div id="footer">
+    X（エックス） <a href="https://x.com/kkp_webninja" target="_blank">@kkp_webninja</a> ｜  
+    🏯 <a href="https://kkpwebninja.com" target="_blank">web忍者の本丸</a><br>
+    各巻物（アプリ）の入り口は本丸ページに集めているでござる。
+  </div>
+
+  <script>
+    let people = JSON.parse(localStorage.getItem("familyAgeList") || "[]");
+
+    function save() {
+      localStorage.setItem("familyAgeList", JSON.stringify(people));
+    }
+
+    function calcAge(birth) {
+      const today = new Date();
+      const dob = new Date(birth);
+      let age = today.getFullYear() - dob.getFullYear();
+      const m = today.getMonth() - dob.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+        age--;
+      }
+      return age;
+    }
+
+    function isBirthdayToday(birth) {
+      const today = new Date();
+      const dob = new Date(birth);
+      return today.getMonth() === dob.getMonth() && today.getDate() === dob.getDate();
+    }
+
+    function render() {
+      const tbody = document.querySelector("#peopleTable tbody");
+      tbody.innerHTML = people.length === 0
+        ? `<tr><td colspan="4">データがありません。上のフォームから追加してください。</td></tr>`
+        : "";
+      people.forEach((p, index) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${p.name}</td>
+          <td>${p.birth}</td>
+          <td>${calcAge(p.birth)} 歳 ${isBirthdayToday(p.birth) ? "🎉" : ""}</td>
+          <td>
+            <button onclick="editPerson(${index})">編集</button>
+            <button onclick="deletePerson(${index})">削除</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function addPerson() {
+      const name = document.getElementById("name").value.trim();
+      const birth = document.getElementById("birthdate").value;
+      if (!name || !birth) return alert("名前と生年月日を入力してください");
+      people.push({ name, birth });
+      save();
+      render();
+      document.getElementById("name").value = "";
+      document.getElementById("birthdate").value = "";
+    }
+
+    function deletePerson(index) {
+      if (confirm("削除してよいですか？")) {
+        people.splice(index, 1);
+        save();
+        render();
+      }
+    }
+
+    function editPerson(index) {
+      const p = people[index];
+      const newName = prompt("新しい名前", p.name);
+      const newBirth = prompt("新しい生年月日 (例: 2010-03-05)", p.birth);
+      if (newName && newBirth) {
+        people[index] = { name: newName, birth: newBirth };
+        save();
+        render();
+      }
+    }
+
+    function clearAll() {
+      if (confirm("すべてのデータを削除しますか？")) {
+        people = [];
+        save();
+        render();
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>
